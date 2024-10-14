@@ -1,0 +1,191 @@
+package proyecto;
+
+/**
+ *
+ * @author bpere
+ */
+public class Funcionalidad {
+     public static boolean revisaParent(String cadena){
+        boolean res=false;
+        boolean valido=true;
+        PilaA pila = new PilaA();
+        
+        for (int i=0; i<cadena.length() && valido; i++){
+            if(cadena.charAt(i)=='(')
+                pila.push(')');
+                
+            if(cadena.charAt(i)==')'){
+                try{
+                    pila.pop();
+                }
+                catch (Exception e){
+                    valido=false;
+                    return res;
+                }
+            }
+        }
+        if (pila.isEmpty())
+            res=true;
+        return res;
+    }
+    
+    public static boolean decimalesValidos(String cadena) {
+        int totPunt = 0; // Contador de puntos decimales en el número actual
+        boolean dentroNumero = false; // Indica si estamos dentro de un número
+        boolean despuesPunto = false; // Indica si el punto decimal ya ha sido encontrado en el número
+
+        for (char c : cadena.toCharArray()) {
+            if (Character.isDigit(c)) {
+                dentroNumero = true;
+            } else if (c == '.') {
+                if (totPunt > 0 || despuesPunto || !dentroNumero) {
+                    return false; // Más de un punto decimal, punto decimal consecutivo o punto decimal al principio/final del número
+                }
+                totPunt++;
+                despuesPunto = true;
+            } else {
+                dentroNumero = false; // Reiniciar estado cuando se encuentra un carácter que no es un dígito
+                totPunt = 0;
+                despuesPunto = false;
+            }
+        }
+
+        return true;
+    }
+    
+   // Verifica si una expresión es válida y si tiene suficientes operandos
+    public static boolean esExpresionValida(String[] tokens) {
+        int operandos = 0;
+        int operadores = 0;
+
+        for (String token : tokens) {
+            if (noEsOperador(token)) {
+                operandos++;
+            } else {
+                operadores++;
+            }
+
+            // No se puede tener más operadores que operandos
+            if (operadores >= operandos) {
+                return false;
+            }
+        }
+
+        // Al final debe haber exactamente un operando más que operadores
+        return operandos == operadores + 1;
+    }
+
+    // Revisa si el token no es un operador
+    public static boolean noEsOperador(String dato){
+        return !dato.equals("+") && !dato.equals("-") && !dato.equals("*") && !dato.equals("/");
+    }
+    
+    public static double evalua(String postfija[]) {
+    PilaADT<Double> pila = new PilaA();
+    double resul = 0;
+
+    for (String token : postfija) {
+        if (token == null) continue; // Ignorar tokens nulos
+        if (noEsOperador(token)) {
+            // Reemplazar '_' con '-' y convertir a número
+            if (token.contains("_")) {
+                token = token.replace("_", "-");
+            }
+            pila.push(Double.valueOf(token)); // Es un número
+        } else {
+            // Comprobar si hay suficientes operandos
+            if (!pila.isEmpty()) {
+                double op2 = pila.pop();
+                if (!pila.isEmpty()) {
+                    double op1 = pila.pop();
+                    switch (token.charAt(0)) {
+                        case '+':
+                            resul = op1 + op2;
+                            break;
+                        case '-':
+                            resul = op1 - op2;
+                            break;
+                        case '*':
+                            resul = op1 * op2;
+                            break;
+                        case '/':
+                            if (op2 == 0) {
+                                throw new RuntimeException("División por cero");
+                            }
+                            resul = op1 / op2;
+                            break;
+                        default:
+                            throw new RuntimeException("Operador no válido");
+                    }
+                    pila.push(resul);
+                } else {
+                    throw new RuntimeException("Pila vacía - Operador sin suficientes operandos");
+                }
+            } else {
+                throw new RuntimeException("Pila vacía - Operador sin suficientes operandos");
+            }
+        }
+    }
+
+    // Verifica si queda un solo resultado en la pila
+    if (pila.isEmpty()) {
+        throw new RuntimeException("Pila vacía - No se puede obtener resultado");
+    }
+
+    return pila.pop();
+}
+
+    // Función para obtener los tokens de la expresión
+   public static String[] obtieneTokens(String cadena) {
+    // Permitir que los números negativos sean parte de un número
+    return cadena.trim().split("(?<=[-+*/()])|(?=[-+*/()])|(?<=\\d)(?=[-_])|(?<=\\d)(?=\\+)|(?<=\\d)(?=\\*)|(?<=\\d)(?=/)");
+}
+
+    
+    public static String[] conviertePostfija(String elementos[]) {
+    String postfija[] = new String[elementos.length];
+    PilaADT<String> pila = new PilaA();
+    int e = 0, p = 0;
+
+    while (e < elementos.length) {
+        String elem = elementos[e];
+
+        if (elem.equals("(")) {
+            pila.push(elem);
+        } else if (elem.equals(")")) {
+            while (!pila.isEmpty() && !pila.peek().equals("(")) {
+                postfija[p++] = pila.pop();
+            }
+            pila.pop(); // Elimina el paréntesis de apertura
+        } else if (noEsOperador(elem)) {
+            postfija[p++] = elem; // Es un número (incluyendo negativos)
+        } else {
+            while (!pila.isEmpty() && prioridad(pila.peek()) >= prioridad(elem)) {
+                postfija[p++] = pila.pop();
+            }
+            pila.push(elem);
+        }
+        e++;
+    }
+
+    while (!pila.isEmpty()) {
+        postfija[p++] = pila.pop();
+    }
+
+    return postfija;
+}
+
+// Método para determinar la prioridad de los operadores
+public static int prioridad(String dato) {
+    switch (dato.charAt(0)) {
+        case '+':
+        case '-':
+            return 1;
+        case '*':
+        case '/':
+            return 2;
+        default:
+            return 0; // En caso de que sea un paréntesis u otro símbolo
+    }
+}
+}
